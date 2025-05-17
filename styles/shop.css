@@ -1,10 +1,5 @@
 /* styles/shop.css */
 
-body {
-    /* Ensure background from homepage.css is used */
-    /* You can override if you want a different background for the shop */
-}
-
 .shop-container {
     /* Container specific adjustments if needed */
     padding-bottom: 3rem; /* More space at the bottom */
