@@ -1,16 +1,24 @@
 /* General body styling */
-        body {
-            font-family: 'Inter', sans-serif;
-            background-image: url('../assets/Casino_Floor.png');
-            margin: 0;
-            padding: 1rem; /* p-4 equivalent */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            box-sizing: border-box;
-        }
+        /* General body styling */
+body {
+    font-family: 'Inter', sans-serif;
+    /* Apply a linear gradient overlay on top of the background image */
+    background-image: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url('../assets/Casino_Floor.png');
+    /* Ensure the background image covers the area, doesn't repeat, and is centered */
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center center;
+    /* Keep background fixed for a parallax-like effect if desired, optional */
+    /* background-attachment: fixed; */
+    margin: 0;
+    padding: 1rem; /* p-4 equivalent */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
 
         /* Main content container styling */
         .main-container {
@@ -73,6 +81,7 @@
             flex-direction: column; /* Default: column layout */
             align-items: center;
             justify-content: center;
+            justify-content: space-around;
         }
         /* Add space between buttons when in column */
         .buttons-container > .casino-btn:not(:last-child) {
@@ -94,6 +103,7 @@
             text-align: center;
             cursor: pointer;
             width: 100%; /* w-full by default for mobile */
+            max-width: 20rem; /* max-w-md */
         }
 
         .casino-btn:hover {
@@ -156,3 +166,37 @@
                 font-size: 1.25rem; /* md:text-xl */
             }
         }
+.fomo-section {
+    background-color: rgba(0, 0, 0, 0.6);
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    border: 1px solid #FFD700;
+}
+
+.fomo-text {
+    color: #ffffff;
+    font-size: 1rem;
+    text-align: center;
+}
+
+.fomo-text strong {
+    color: #00FF00; /* Bright green for positive emphasis */
+}
+
+.flashing-icon {
+    animation: flash 1s infinite;
+    display: inline-block; /* Needed for animation to not break layout */
+}
+
+.timer-text {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.9em;
+    color: #FF6347; /* Tomato color for urgency */
+}
+
+@keyframes flash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+}
