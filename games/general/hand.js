@@ -1,44 +1,41 @@
 class hand {
 
     printHand() {
-        console.log("Count: " + this.contents.length);
+        const playerContainer = document.getElementById('player-cards');
+        playerContainer.innerHTML = '';
+        document.getElementById('player-points').textContent = "Points: " + points;
 
-        const container = document.getElementById('player-cards');
-        container.innerHTML = '';
-
-        for (let i = this.contents.length - 1; i >= 0; i--) {
-            console.log(i + 1 + ": " + this.contents[i].printCard());
-
+        for (let i = 0; i < this.contents.length; i++) {
+            const card = this.contents[i];
             const cardDiv = document.createElement('div');
             cardDiv.className = 'card';
-            cardDiv.textContent = this.contents[i].face;
-            container.appendChild(cardDiv);
+            cardDiv.innerHTML = `
+                <div><strong>${card.face}</strong></div>
+                <div>${card.suit}</div>
+            `;
+            playerContainer.appendChild(cardDiv);
         }
-
-        const points = blackjack.calculateValue(this);
-        document.getElementById('player-points').textContent = "Points: " + points;
     }
 
     printHouse() {
-        console.log("House Count: " + this.contents.length);
+        const houseContainer = document.getElementById('house-cards');
+        houseContainer.innerHTML = '';
+        document.getElementById('house-points').textContent = "House Points: " + hPoints;
 
-        const container = document.getElementById('house-cards');
-        container.innerHTML = '';
-
-        for (let i = this.contents.length - 1; i >= 0; i--) {
-            console.log("House " + (i + 1) + ": " + this.contents[i].printCard());
-
+        for (let i = 0; i < this.contents.length; i++) {
+            const card = this.contents[i];
             const cardDiv = document.createElement('div');
             cardDiv.className = 'card';
-            cardDiv.textContent = this.contents[i].face;
-            container.appendChild(cardDiv);
+            cardDiv.innerHTML = `
+                <div><strong>${card.face}</strong></div>
+                <div>${card.suit}</div>
+            `;
+            houseContainer.appendChild(cardDiv);
         }
-
-        const hPoints = blackjack.calculateValue(this);
-        document.getElementById('house-points').textContent = "House Points: " + hPoints;
     }
 
     constructor() {
         this.contents = [];
     }
+
 }
