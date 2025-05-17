@@ -1,6 +1,6 @@
 body {
     font-family: 'Inter', sans-serif;          /* Apply Inter font to the body */
-    background-color: #f0f0f0;                 /* Light gray background */
+    background-image: url('assets/Casino_Floor.png');
 }
 
 /* Styling for casino action buttons */
