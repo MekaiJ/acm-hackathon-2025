@@ -179,3 +179,11 @@ var blackjack = {
     }
 
 }
+window.onload = () => {
+    blackjack.boot();
+
+    document.getElementById('hit').addEventListener('click', () => blackjack.hitMe());
+    document.getElementById('hold').addEventListener('click', () => blackjack.hold());
+};
+window.blackjack = blackjack;
+
