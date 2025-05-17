@@ -1,0 +1,225 @@
+/* styles/shop.css */
+
+body {
+    /* Ensure background from homepage.css is used */
+    /* You can override if you want a different background for the shop */
+}
+
+.shop-container {
+    /* Container specific adjustments if needed */
+    padding-bottom: 3rem; /* More space at the bottom */
+}
+
+.shop-header {
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background-color: rgba(0, 0, 0, 0.3); /* Slight background for header section */
+    border-radius: 8px;
+}
+
+.shop-header .welcome-heading {
+    font-size: 2rem; /* Slightly smaller than homepage main title */
+    margin-bottom: 0.5rem;
+}
+
+.shop-header .intro-paragraph {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+}
+
+.current-chips {
+    display: block;
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #FFD700; /* Gold color for chips */
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.back-to-casino-btn {
+    background-color: #6c757d; /* A neutral or secondary color */
+    color: white;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    text-decoration: none;
+    display: inline-block;
+    margin-top: 1rem;
+}
+
+.back-to-casino-btn:hover {
+    background-color: #5a6268;
+}
+
+
+.shop-section-heading {
+    margin-top: 2.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #FFD700; /* Gold underline */
+    padding-bottom: 0.5rem;
+    text-align: left; /* Align section headings to the left */
+}
+
+.shop-items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Responsive grid */
+    gap: 1.5rem; /* Space between items */
+    margin-bottom: 2rem;
+}
+
+.shop-item {
+    background-color: rgba(20, 20, 20, 0.8); /* Darker item background */
+    border: 2px solid #444;
+    border-radius: 8px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative; /* For absolute positioning of tags */
+}
+
+.shop-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(255, 215, 0, 0.3); /* Goldish glow on hover */
+    border-color: #FFD700;
+}
+
+.item-image-placeholder {
+    width: 100%;
+    max-width: 200px; /* Max width for the image container */
+    height: 150px; /* Fixed height */
+    background-color: #333; /* Placeholder background */
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden; /* Ensure image fits */
+}
+
+.item-image-placeholder img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain; /* Or 'cover' depending on desired effect */
+}
+
+.item-name {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #FFD700; /* Gold */
+    margin-bottom: 0.5rem;
+}
+
+.item-description {
+    font-size: 0.9rem;
+    color: #ccc;
+    margin-bottom: 1rem;
+    min-height: 40px; /* Give some consistent space for description */
+}
+
+.item-price {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #00FF00; /* Green for price, or white */
+    margin-bottom: 1.2rem;
+}
+
+.item-price .currency-icon {
+    color: #FFD700; /* Gold for chip icon */
+}
+
+.item-price .original-price {
+    text-decoration: line-through;
+    color: #aaa;
+    font-size: 0.9rem;
+    margin-right: 0.5rem;
+}
+
+.item-price .sale-price {
+    color: #00FF00; /* Bright green for sale price */
+    font-size: 1.3rem; /* Make sale price more prominent */
+    animation: pulsePrice 1s infinite alternate;
+}
+
+@keyframes pulsePrice {
+    from { transform: scale(1); }
+    to { transform: scale(1.05); }
+}
+
+.buy-btn {
+    width: 80%;
+    padding: 0.8rem 1rem;
+    font-size: 1rem;
+    margin-top: auto; /* Pushes button to the bottom if card heights vary slightly */
+}
+
+/* Re-use primary action button style from homepage.css if defined, or define here */
+.primary-action-btn {
+    background-color: #00C851; /* Vibrant Green from previous suggestions */
+    color: #ffffff;
+}
+.primary-action-btn:hover {
+    background-color: #007E33;
+}
+
+.best-value-btn {
+    border: 2px dashed #FFD700; /* Highlight best value */
+}
+
+/* Item Tags (Persuasive Elements) */
+.item-tag {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: #FF4500; /* Bright orange/red */
+    color: white;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+    font-weight: bold;
+    border-radius: 4px;
+    text-transform: uppercase;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+}
+
+.popular-tag {
+    background-color: #FFD700; /* Gold */
+    color: #000;
+}
+
+.limited-tag {
+    background-color: #dc3545; /* Red for urgency */
+    animation: blinkTag 1.5s infinite;
+}
+
+.best-value-tag {
+    background-color: #17a2b8; /* Teal/Info blue */
+    color: white;
+    left: 10px; /* Position on left */
+    right: auto;
+}
+
+
+@keyframes blinkTag {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.timer-text {
+    font-size: 0.8em;
+    color: #FF6347; /* Tomato color for urgency */
+    display: inline; /* Make it part of the heading */
+}
+
+/* Responsive adjustments for shop items if needed */
+@media (max-width: 640px) {
+    .shop-items-grid {
+        grid-template-columns: 1fr; /* Single column on small screens */
+    }
+    .shop-item {
+        padding: 1rem;
+    }
+    .item-name {
+        font-size: 1.2rem;
+    }
+}
