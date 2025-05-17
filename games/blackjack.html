@@ -2,230 +2,59 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blackjack</title>
+    <title>Blackjack Game</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            background-color: #35654d; /* Green felt color */
+            font-family: sans-serif;
+            background: #2e7d32;
             color: white;
-            padding-top: 20px;
+            text-align: center;
+            padding: 20px;
         }
-        .area-title {
-            margin-bottom: 10px;
-            font-size: 1.5em;
+        .hand {
+            margin: 20px 0;
         }
-        .cards-container {
+        .cards {
             display: flex;
-            gap: 10px; /* Space between cards */
-            margin-bottom: 20px;
-            min-height: 150px; /* Approximate height of a card image + padding */
-            border: 2px dashed #FFD700; /* Gold dashed border */
-            padding: 10px;
-            background-color: rgba(0,0,0,0.2);
-            border-radius: 5px;
+            justify-content: center;
+            gap: 10px;
         }
-        .card-image {
-            width: 100px; /* Adjust to your card image width */
-            height: auto;  /* Maintain aspect ratio */
-            border-radius: 5px;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
-        }
-        .buttons-container button {
-            padding: 10px 20px;
-            font-size: 1em;
-            margin: 5px;
-            cursor: pointer;
-            background-color: #FFD700; /* Gold */
-            border: 2px solid #DAA520; /* Darker Gold */
-            border-radius: 5px;
+        .card {
+            background: white;
             color: black;
+            padding: 10px;
+            border-radius: 6px;
+            width: 50px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-weight: bold;
         }
-        .buttons-container button:hover {
-            background-color: #f0c040;
-        }
-        .points-display {
-            font-size: 1.2em;
-            margin-bottom: 10px;
-        }
-        #game-messages {
-            margin-top: 20px;
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #FFEB3B; /* Yellow for messages */
-            min-height: 30px;
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 10px;
         }
     </style>
 </head>
 <body>
-    <h1>Blackjack Game</h1>
-
-    <div id="dealer-section">
-        <h2 class="area-title">Dealer's Hand</h2>
-        <div id="dealer-points" class="points-display">Points: 0</div>
-        <div id="dealer-cards" class="cards-container">
-            </div>
+    <h1>Blackjack</h1>
+    <div class="hand">
+        <h2>Your Hand</h2>
+        <div id="player-cards" class="cards"></div>
+        <p id="player-points">Points: 0</p>
     </div>
-
-    <div id="player-section">
-        <h2 class="area-title">Your Hand</h2>
-        <div id="player-points" class="points-display">Points: 0</div>
-        <div id="player-cards" class="cards-container">
-            </div>
+    <div class="hand">
+        <h2>House Hand</h2>
+        <div id="house-cards" class="cards"></div>
+        <p id="house-points">House Points: 0</p>
     </div>
-
-    <div id="game-messages">
-        Click Start to begin!
+    <div>
+        <button onclick="blackjack.hitMe()">Hit Me</button>
+        <button onclick="blackjack.hold()">Hold</button>
     </div>
-
-    <div class="buttons-container">
-        <button id="startButton" onclick="blackjackGui.startGame()">Start!</button>
-        <button id="hitButton" onclick="blackjackGui.hit()" disabled>Hit Me!</button>
-        <button id="holdButton" onclick="blackjackGui.hold()" disabled>Hold</button>
-    </div>
-
-    <script src="games/general/deck.js"></script>
-    <script src="games/general/hand.js"></script>
-    <script src="games/blackjack.js"></script>
-    <script>
-        // Simple GUI interaction layer
-        const blackjackGui = {
-            dealerCardsDiv: document.getElementById('dealer-cards'),
-            playerCardsDiv: document.getElementById('player-cards'),
-            dealerPointsDiv: document.getElementById('dealer-points'),
-            playerPointsDiv: document.getElementById('player-points'),
-            gameMessagesDiv: document.getElementById('game-messages'),
-            hitButton: document.getElementById('hitButton'),
-            holdButton: document.getElementById('holdButton'),
-            startButton: document.getElementById('startButton'),
-
-            // --- Helper to create card image path ---
-            // Assumes card object has 'suit' (clubs, diamonds, hearts, spades)
-            // and 'face' (02, 03, ..., 10, A, J, Q, K)
-            getCardImagePath: function(card) {
-                // Convert face to match your asset names (e.g., 'A' to 'A', '02' to '02')
-                let faceValue = card.face.toUpperCase(); // Ensure J, Q, K, A are uppercase
-                // Your assets use '02' through '10'. 'A', 'J', 'K', 'Q' seem to be single letters.
-                // Let's assume card.face already provides this.
-
-                // Convert suit to match your asset names (e.g., 'S' to 'spades')
-                let suitName = '';
-                switch (card.suit.toUpperCase()) {
-                    case 'C': suitName = 'clubs'; break;
-                    case 'D': suitName = 'diamonds'; break;
-                    case 'H': suitName = 'hearts'; break;
-                    case 'S': suitName = 'spades'; break;
-                    default: suitName = card.suit.toLowerCase(); // Fallback
-                }
-                return `assets/cards/card_${suitName}_${faceValue}.png`;
-            },
-
-            renderCard: function(card, targetDiv, isDealerHiddenCard = false) {
-                const cardImg = document.createElement('img');
-                cardImg.classList.add('card-image');
-                if (isDealerHiddenCard) {
-                    cardImg.src = 'assets/cards/card_back.png'; // Assuming you have card_back.png
-                    cardImg.alt = 'Card Back';
-                } else {
-                    cardImg.src = this.getCardImagePath(card);
-                    cardImg.alt = `${card.face} of ${card.suit}`;
-                }
-                targetDiv.appendChild(cardImg);
-            },
-
-            updateHands: function(isDealerTurn = false) {
-                // Clear previous cards
-                this.dealerCardsDiv.innerHTML = '';
-                this.playerCardsDiv.innerHTML = '';
-
-                // Render player cards
-                blackjack.grip.contents.forEach(card => { // Assuming 'grip' is player's hand in blackjack.js
-                    this.renderCard(card, this.playerCardsDiv);
-                });
-
-                // Render dealer cards
-                blackjack.house.contents.forEach((card, index) => { // Assuming 'house' is dealer's hand
-                    // Hide first dealer card until player holds or game ends
-                    if (index === 0 && !isDealerTurn && !blackjack.isGameOver /* Add isGameOver flag to blackjack.js */) {
-                        this.renderCard(card, this.dealerCardsDiv, true);
-                    } else {
-                        this.renderCard(card, this.dealerCardsDiv);
-                    }
-                });
-
-                // Update points
-                this.dealerPointsDiv.textContent = `Points: ${isDealerTurn || blackjack.isGameOver ? blackjack.hPoints : (blackjack.house.contents.length > 1 ? blackjack.value[blackjack.house.contents[1].face] + ' + ?' : '?')}`;
-                this.playerPointsDiv.textContent = `Points: ${blackjack.points}`;
-            },
-
-            startGame: function() {
-                blackjack.boot(); // Your existing boot function
-                blackjack.isGameOver = false; // Ensure this flag is set in your blackjack.js
-                this.updateHands();
-                this.gameMessagesDiv.textContent = "Your turn. Hit or Hold?";
-                this.hitButton.disabled = false;
-                this.holdButton.disabled = false;
-                this.startButton.disabled = true;
-            },
-
-            hit: function() {
-                blackjack.hitMe(); // Your existing hitMe function
-                this.updateHands();
-                if (blackjack.points > 21) {
-                    this.gameMessagesDiv.textContent = `Bust! You have ${blackjack.points}. Dealer wins.`;
-                    this.endGame();
-                } else if (blackjack.points === 21) {
-                     this.gameMessagesDiv.textContent = "You have 21! Click Hold for dealer's turn.";
-                }
-                 // Check if dealer busted during their automated hit (if any in your hitMe logic)
-                if (blackjack.hBust /* Add hBust flag to blackjack.js */) {
-                    this.gameMessagesDiv.textContent = `Dealer busted with ${blackjack.hPoints}! You win!`;
-                    this.endGame(true); // Force reveal dealer cards
-                }
-            },
-
-            hold: function() {
-                blackjack.hold(); // Your existing hold function (which should include dealer's play)
-                this.updateHands(true); // true to show all dealer cards
-
-                // Determine winner based on your blackjack.js logic
-                // Your blackjack.hold() should ideally set a message or outcome
-                // For now, a simple check:
-                if (blackjack.points > 21) { // Should have been caught by hit
-                     this.gameMessagesDiv.textContent = `Player busts with ${blackjack.points}! Dealer wins.`;
-                } else if (blackjack.hPoints > 21) {
-                    this.gameMessagesDiv.textContent = `Dealer busts with ${blackjack.hPoints}! You win!`;
-                } else if (blackjack.points === blackjack.hPoints) {
-                    this.gameMessagesDiv.textContent = `Push! It's a tie at ${blackjack.points}.`;
-                } else if (blackjack.points > blackjack.hPoints) {
-                    this.gameMessagesDiv.textContent = `You win with ${blackjack.points} against Dealer's ${blackjack.hPoints}!`;
-                } else {
-                    this.gameMessagesDiv.textContent = `Dealer wins with ${blackjack.hPoints} against Your ${blackjack.points}.`;
-                }
-                this.endGame();
-            },
-
-            endGame: function(forceShowDealer = false) {
-                blackjack.isGameOver = true; // Ensure this flag is set
-                this.hitButton.disabled = true;
-                this.holdButton.disabled = true;
-                this.startButton.disabled = false;
-                this.startButton.textContent = "Play Again?";
-                if (forceShowDealer) {
-                    this.updateHands(true);
-                }
-            }
-        };
-
-        // Modify your blackjack.js to call blackjackGui.updateHands()
-        // and blackjackGui.gameMessagesDiv.textContent = "message"
-        // instead of console.log for hand and point updates.
-        // Also, your blackjack object should have an `isGameOver` flag.
-        // And potentially `hBust` for dealer bust.
-    </script>
+    <h2 id="status"></h2>
+    <script src="blackjack.js"></script>
 </body>
 </html>

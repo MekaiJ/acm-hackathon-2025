@@ -55,9 +55,9 @@ var blackjack = {
         points = this.calculateValue(grip);
         hPoints = this.calculateValue(house);
         if (points > 21) {
-            console.log("Bust!");
+            document.getElementById('status').textContent = "Bust!";
         }else if(hPoints > 21) {
-            console.log("House Bust!");
+            document.getElementById('status').textContent = "House Bust!";
         }
 
         //Prints the hands and points
@@ -106,7 +106,7 @@ var blackjack = {
 
         //Loss check
         if (points > 21) {
-            console.log("Bust!");
+            document.getElementById('status').textContent = "Bust!";
         }
 
 
@@ -153,7 +153,8 @@ var blackjack = {
         house.printHouse();
 
         if (hPoints > 21) {
-            console.log("House Bust!");
+            document.getElementById('status').textContent = "House Bust!";
+
         }
 
     },
