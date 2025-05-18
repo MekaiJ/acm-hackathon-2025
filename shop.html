@@ -96,39 +96,82 @@
 
     <script>
         // --- Global State & Configuration ---
-        let playerChips = 0; // This will be loaded, e.g., from localStorage or an API
         const chipBalanceElement = document.getElementById('player-chip-balance');
         const MYSTERY_BOX_DURATION_SECONDS = 10 * 60; // 10 minutes for the timer
 
-        // --- Utility Functions ---
-        function formatChipCount(chips) {
-            return chips.toLocaleString(); // Adds commas for thousands
-        }
+        // --- Load User Data ---
+        const user = JSON.parse(localStorage.getItem("user"));
+        let id;
+        let liamCoins; // This will be our primary currency variable for the shop
 
-        function updateChipDisplay() {
-            if (chipBalanceElement) {
-                chipBalanceElement.textContent = formatChipCount(playerChips);
+        if (!user || user.id === undefined || user.liamCoins === undefined) {
+            // If user data is missing or incomplete, redirect to login
+            // You might want to handle this more gracefully, e.g., show a message
+            console.error("User data not found or incomplete in localStorage. Redirecting to login.");
+            window.location.href = "games/login.html";
+        } else {
+            id = parseInt(user.id, 10);
+            liamCoins = parseInt(user.liamCoins, 10);
+
+            if (isNaN(id) || isNaN(liamCoins)) {
+                console.error("User ID or LiamCoins is not a valid number after parsing. Redirecting to login.");
+                window.location.href = "games/login.html";
             }
         }
 
+        // --- Utility Functions ---
+        function formatChipCount(coins) {
+            return coins.toLocaleString(); // Adds commas for thousands
+        }
+
+        function updateLiamCoinDisplayAndStorage() {
+            if (chipBalanceElement) {
+                chipBalanceElement.textContent = formatChipCount(liamCoins);
+            }
+            // Update the user object in memory
+            if (user) { // Ensure user object exists
+                user.liamCoins = liamCoins.toString();
+                // Save updated user object back to localStorage
+                localStorage.setItem("user", JSON.stringify(user)); // Stringify before saving
+            }
+
+
+            // Persist to backend API
+            if (user && id !== undefined) { // Ensure we have a user and ID
+                fetch(`http://10.104.160.95:8080/api/users/${id}`, { // Use template literal for clarity
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(user) // Send the whole user object
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        // If response is not OK, throw an error to be caught by .catch
+                        return response.text().then(text => { throw new Error(`Network response was not ok: ${response.status} ${response.statusText} - ${text}`) });
+                    }
+                    return response.json();
+                })
+                .then(data => console.log('Shop: Updated user on backend:', data))
+                .catch(error => console.error('Shop: Error updating user on backend:', error));
+            }
+        }
+
+
         function showNotification(message, type = 'info') {
-            // In a real app, you'd use a more sophisticated notification system (e.g., a toast library)
             console.log(`[${type.toUpperCase()}] ${message}`);
             alert(message); // Simple alert for now
         }
 
         // --- Initialization ---
         function initializeShop() {
-            // Try to load chips from localStorage for basic persistence
-            const savedChips = localStorage.getItem('playerCasinoChips');
-            if (savedChips !== null) {
-                playerChips = parseInt(savedChips, 10);
-            } else {
-                // Default starting chips if nothing is saved (e.g., for a new player)
-                playerChips = 5000; // Example starting balance
-                localStorage.setItem('playerCasinoChips', playerChips.toString());
+            if (isNaN(liamCoins)) { // Double check after potential redirection
+                // This case should ideally be caught by the initial check,
+                // but as a safeguard if initializeShop is called unexpectedly.
+                console.error("LiamCoins is NaN during shop initialization. This shouldn't happen.");
+                return; // Prevent further execution if liamCoins is not valid
             }
-            updateChipDisplay();
+            updateLiamCoinDisplayAndStorage(); // Initial display and ensure localStorage is current
             startMysteryBoxTimer(MYSTERY_BOX_DURATION_SECONDS);
             setupEventListeners();
         }
@@ -147,39 +190,28 @@
             const itemName = button.dataset.itemName;
             const price = parseFloat(button.dataset.price);
             const currency = button.dataset.currency;
-            const itemType = button.dataset.itemType; // e.g., 'chips', 'skin', 'subscription'
-            const chipAmount = parseInt(button.dataset.chipAmount, 10) || 0; // Amount of chips this item gives
+            const itemType = button.dataset.itemType;
+            const chipAmount = parseInt(button.dataset.chipAmount, 10) || 0;
 
             console.log(`Attempting purchase: ${itemName} (ID: ${itemId}) for ${price} ${currency}`);
 
-            if (currency === 'chips') {
-                if (playerChips >= price) {
-                    // Simulate backend call for chip-based purchase
-                    // MOCK_processChipPurchaseOnBackend(itemId, price)
-                    // .then(success => { if(success) { ... } })
-                    
-                    playerChips -= price;
-                    if (itemType === 'chips') {
-                        playerChips += chipAmount; // Add chips if it's a chip bundle
+            if (currency === 'chips') { // Assuming 'chips' means LiamCoins
+                if (liamCoins >= price) {
+                    liamCoins -= price;
+                    if (itemType === 'chips') { // If the item itself is a bundle of LiamCoins
+                        liamCoins += chipAmount;
                     }
-                    
-                    localStorage.setItem('playerCasinoChips', playerChips.toString());
-                    updateChipDisplay();
+
+                    updateLiamCoinDisplayAndStorage(); // This will update display, localStorage, and backend
                     showNotification(`Successfully purchased ${itemName}!`, 'success');
-                    // TODO: Add item to player's inventory (client-side representation or backend call)
-                    console.log(`BACKEND CALL SIMULATION: processPurchase(user, ${itemId}, ${price} chips)`);
+                    // TODO: Add item to player's inventory (client-side representation or backend call if it's not just currency)
+                    console.log(`SHOP: Purchase successful. User ${id} bought ${itemName}. Current LiamCoins: ${liamCoins}`);
 
                 } else {
-                    showNotification('Not enough chips for this item!', 'error');
+                    showNotification('Not enough LiamCoins for this item!', 'error');
                 }
             } else if (currency === 'usd') {
-                // Real money transaction (e.g., VIP Pass)
                 showNotification(`Initiating purchase for ${itemName} for $${price}. \nRedirecting to payment provider... (simulation)`, 'info');
-                // TODO: Integrate with a real payment gateway (Stripe, PayPal, Braintree)
-                // This would involve:
-                // 1. Calling your backend to create a payment session/intent.
-                // 2. Redirecting the user to the payment provider or using their SDK.
-                // 3. Handling the payment confirmation callback from your backend.
                 console.log(`BACKEND CALL SIMULATION: createPaymentIntent(user, ${itemId}, ${price} USD)`);
             } else {
                 showNotification('Unknown currency type.', 'error');
@@ -194,7 +226,6 @@
 
             let timeLeft = durationSeconds;
 
-            // Clear any existing interval to prevent multiple timers
             if (mysteryBoxInterval) {
                 clearInterval(mysteryBoxInterval);
             }
@@ -203,7 +234,6 @@
                 if (timeLeft <= 0) {
                     clearInterval(mysteryBoxInterval);
                     timerElement.textContent = "(Expired!)";
-                    // Optionally disable the buy button for the mystery box
                     const mysteryBoxButton = document.querySelector('button[data-item-id="mystery_box"]');
                     if (mysteryBoxButton) {
                         mysteryBoxButton.disabled = true;
@@ -219,11 +249,13 @@
         }
 
         // --- Document Ready ---
-        // Ensures the DOM is fully loaded before running scripts
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', initializeShop);
         } else {
-            initializeShop(); // DOMContentLoaded has already fired
+            // DOMContentLoaded has already fired only if user was not redirected
+            if (user && !isNaN(liamCoins)) { // Check if user data is valid before initializing
+                 initializeShop();
+            }
         }
 
     </script>
