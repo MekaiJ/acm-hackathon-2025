@@ -125,6 +125,7 @@
                     const parsedUser = JSON.parse(userString);
                     if (parsedUser && typeof parsedUser.username === 'string' && parsedUser.liamCoins !== undefined) {
                         const coins = parseInt(parsedUser.liamCoins, 10);
+                        document.getElementById('player-chip-balance').textContent = coins.toLocaleString();
                         if (!isNaN(coins)) {
                             currentLocalUser = {
                                 username: parsedUser.username,
