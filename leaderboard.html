@@ -3,21 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Leaderboard</title>
+    <title>Leaderboard - Casino Royale</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
             background-color: #2e7d32; /* Green background, consistent with casino theme */
+            color: #f0f0f0; /* Lighter text color for better contrast on dark green */
         }
         .leaderboard-item {
             transition: all 0.3s ease-in-out;
+            background-color: #ffffff; /* Ensure items are white for readability */
+            color: #333; /* Dark text for item content */
         }
         .leaderboard-item:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
         .rank-badge {
             min-width: 30px; /* Ensure consistent badge width */
@@ -26,13 +28,13 @@
             align-items: center;
             justify-content: center;
             font-weight: 600;
+            border-radius: 50%; /* Make badges circular */
         }
         .rank-1 { background-color: #ffd700; color: #4a3b00; } /* Gold */
         .rank-2 { background-color: #c0c0c0; color: #3e3e3e; } /* Silver */
         .rank-3 { background-color: #cd7f32; color: #5d3a1a; } /* Bronze */
         .rank-other { background-color: #60a5fa; color: white; } /* Blue */
 
-        /* Styles for the message box */
         #message-box {
             position: fixed;
             bottom: 20px;
@@ -59,31 +61,56 @@
             opacity: 1;
             visibility: visible;
         }
-
-        /* Optional: If you want even more distinct styling for the ad text highlight/link not covered by Tailwind easily */
-        /* .ad-text-highlight { color: #FFEB3B; font-weight: bold; } */
-        /* .ad-text-link { color: #FFD700; text-decoration: underline; font-weight: bold; } */
-        /* .ad-text-link:hover { color: #FFF; } */
+        .button-group button, .button-group a {
+            margin-left: 0.5rem;
+            margin-right: 0.5rem;
+        }
+        .main-content-card {
+             background-color: rgba(255, 255, 255, 0.95); /* Slightly transparent white for the main card */
+             color: #333; /* Dark text for main card content */
+        }
+        .ad-card {
+            background-color: rgba(31, 41, 55, 0.9); /* Darker, slightly transparent for ad card */
+            border-color: #f59e0b; /* Tailwind amber-500 */
+        }
+        .conversion-rate-box {
+            background-color: #3b82f6; /* Tailwind blue-500 */
+            color: white;
+            border-radius: 5px;
+            padding: 8px 12px; /* Added padding */
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
     </style>
 </head>
-<body class="flex flex-col items-center justify-center min-h-screen p-4">
+<body class="flex flex-col items-center justify-start min-h-screen p-4 pt-8">
 
-    <div class="w-full max-w-md bg-white shadow-xl rounded-lg p-6 md:p-8">
-        <h1 class="text-3xl md:text-4xl font-bold text-center text-gray-800 mb-8">🏆 Live Leaderboard 🏆</h1>
+    <div class="w-full max-w-lg bg-white shadow-xl rounded-lg p-6 md:p-8 main-content-card">
+        <h1 class="text-3xl md:text-4xl font-bold text-center text-gray-800 mb-6">🏆 Leaderboard 🏆</h1>
+        <div class="text-center mb-6 button-group">
+            <button id="refreshButton" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-150 ease-in-out">
+                🔄 Refresh
+            </button>
+            <a href="index.html" class="inline-block bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition duration-150 ease-in-out">
+                ← Casino
+            </a>
+        </div>
 
         <div>
-            <h2 class="text-2xl font-semibold text-gray-700 mb-6 text-center">Top Winners</h2>
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4 text-center">Top Winners</h2>
             <div id="leaderboard" class="space-y-3">
                 <p class="text-center text-gray-500">Loading leaderboard...</p>
             </div>
         </div>
     </div>
-    <div class="w-full max-w-md mt-10 mb-6 text-center">
-        <div style="background-color: #60a5fa; border-radius: 5px; margin-bottom: 10px;">Current Liam Coin conversion rate: 1287 Liam Coins = 6.12 Swedish Krona</div>
-        <div class="bg-gray-900/90 border-2 border-yellow-500 rounded-lg p-4 shadow-xl">
-            <div class="brounded h-24 flex items-center justify-center mb-3">
-                <img src="assets/pickled-eggs.png" alt="Pickled Eggs">
-                </div>
+
+    <div class="w-full max-w-lg mt-8 mb-6 text-center">
+        <div class="conversion-rate-box">Current Liam Coin conversion rate: 1287 Liam Coins = 6.12 Swedish Krona</div>
+        <div class="ad-card border-2 rounded-lg p-4 shadow-lg">
+            <div class="h-24 flex items-center justify-center mb-3">
+                <img src="assets/pickled-eggs.png" alt="Pickled Eggs" class="max-h-full">
+            </div>
             <p class="text-gray-200 text-sm md:text-base leading-relaxed">
                 💰 Big News! Our <span class="font-bold text-yellow-400">Delicious Pickled Eggs</span> just went on sale! 💰
             </p>
@@ -92,19 +119,20 @@
     <div id="message-box"></div>
 
     <script>
-        const socket = io('http://10.104.160.95:8080'); // Your Socket.IO server
         const leaderboardDiv = document.getElementById('leaderboard');
         const messageBox = document.getElementById('message-box');
+        const refreshButton = document.getElementById('refreshButton');
         let messageTimeout;
-        let currentLocalUser = null; // To store the logged-in user's data from localStorage
-        let lastFetchedLeaderboardData = []; // Store the last successfully fetched array
+        let currentLocalUser = null; // Stores { username: "name_from_localstorage", liamCoins: 123 }
+        let lastFetchedLeaderboardData = []; // Stores the last successfully fetched array from API
 
         // Function to show a message (success or error)
         function showMessage(message, type = 'success') {
             messageBox.textContent = message;
-            messageBox.className = '';
-            messageBox.classList.add(type);
+            messageBox.className = ''; // Clear existing type classes
+            messageBox.classList.add(type); // 'success' or 'error'
             messageBox.classList.add('show');
+
             if (messageTimeout) {
                 clearTimeout(messageTimeout);
             }
@@ -116,73 +144,67 @@
         // Function to load local user data from localStorage
         function loadLocalUserData() {
             const userString = localStorage.getItem("user");
+            currentLocalUser = null; // Reset before loading
             if (userString) {
                 try {
                     const parsedUser = JSON.parse(userString);
-                    // Ensure username and liamCoins are present and valid
+                    // Expecting 'username' (for local identification) and 'liamCoins' in localStorage
                     if (parsedUser && typeof parsedUser.username === 'string' && parsedUser.liamCoins !== undefined) {
                         const coins = parseInt(parsedUser.liamCoins, 10);
                         if (!isNaN(coins)) {
                             currentLocalUser = {
-                                username: parsedUser.username,
+                                username: parsedUser.username, // This is the current browser user's display name
                                 liamCoins: coins
-                                // Include id if you need it for precise matching later
-                                // id: parsedUser.id ? parseInt(parsedUser.id, 10) : undefined
                             };
-                            console.log("Local user data loaded for leaderboard:", currentLocalUser);
+                            // console.log("Local user data loaded for leaderboard:", currentLocalUser);
                         } else {
-                             currentLocalUser = null; // Parsed liamCoins is NaN
+                            console.warn("Parsed liamCoins from localStorage is NaN for local user.");
                         }
                     } else {
-                        currentLocalUser = null; // Missing username or liamCoins
+                         console.warn("Local user data in localStorage is missing 'username' or 'liamCoins', or 'username' is not a string.");
                     }
                 } catch (e) {
                     console.error("Error parsing local user data for leaderboard:", e);
-                    currentLocalUser = null;
                 }
-            } else {
-                currentLocalUser = null; // No user in localStorage
             }
         }
 
         /**
          * Updates the leaderboard display.
-         * @param {Array<Object>} usersArray - An array of user objects, e.g., [{username: 'name', liamCoins: 100}, ...]
-         * OR an object {username1: score1, username2: score2} for socket updates.
+         * @param {Array<Object>} usersArrayFromServer - An array of user objects from the API.
+         * Each object from API is expected to have 'name' (for display) and 'liamCoins'.
          */
-        function updateLeaderboard(data) {
+        function updateLeaderboard(usersArrayFromServer) {
+            if (!leaderboardDiv) {
+                console.error("Leaderboard DIV not found!");
+                return;
+            }
             leaderboardDiv.innerHTML = ''; // Clear previous entries
 
-            let processedUsersArray = [];
+            // Create a mutable shallow copy of the user objects from the server
+            let displayArray = usersArrayFromServer.map(u => ({ ...u }));
 
-            if (Array.isArray(data)) {
-                // Data is an array of user objects (likely from HTTP fetch)
-                processedUsersArray = data.map(u => ({ ...u })); // Create a shallow copy to make it mutable
-            } else if (typeof data === 'object' && data !== null) {
-                // Data is an object {username: score} (likely from old socket event or processed form)
-                processedUsersArray = Object.entries(data).map(([username, liamCoins]) => ({ username, liamCoins }));
-            }
-
-
-            // If currentLocalUser exists, update their entry in the processedUsersArray or add them
             if (currentLocalUser) {
-                const localUserIndex = processedUsersArray.findIndex(u => u.username === currentLocalUser.username);
+                // API provides 'name', local user has 'username'. We match these.
+                const localUserIndex = displayArray.findIndex(u => u.name === currentLocalUser.username);
                 if (localUserIndex > -1) {
-                    // Update existing user's liamCoins if local is higher or simply to reflect local truth
-                    processedUsersArray[localUserIndex].liamCoins = currentLocalUser.liamCoins;
+                    displayArray[localUserIndex].liamCoins = currentLocalUser.liamCoins;
                 } else {
-                    // Add local user if not in the list (e.g., new user not yet in a full fetch)
-                    processedUsersArray.push({ ...currentLocalUser });
+                    // Add local user if not in the fetched list, using 'name' for consistency in displayArray structure
+                    displayArray.push({
+                        name: currentLocalUser.username, // This will be used for display
+                        liamCoins: currentLocalUser.liamCoins
+                        // id: "local_user" // Optional: for debugging or specific styling
+                    });
                 }
             }
 
-            if (processedUsersArray.length === 0) {
-                leaderboardDiv.innerHTML = '<p class="text-center text-gray-500">The leaderboard is empty.</p>';
+            if (displayArray.length === 0) {
+                leaderboardDiv.innerHTML = '<p class="text-center text-gray-500">The leaderboard is empty or no data received.</p>';
                 return;
             }
 
-            // Sort the leaderboard by liamCoins in descending order
-            const sortedLeaderboard = processedUsersArray.sort((a, b) => b.liamCoins - a.liamCoins);
+            const sortedLeaderboard = displayArray.sort((a, b) => (b.liamCoins || 0) - (a.liamCoins || 0) );
 
             sortedLeaderboard.forEach((user, index) => {
                 const rank = index + 1;
@@ -191,93 +213,88 @@
                 else if (rank === 2) rankBadgeClass = 'rank-2';
                 else if (rank === 3) rankBadgeClass = 'rank-3';
 
-                const isCurrentUser = currentLocalUser && user.username === currentLocalUser.username;
+                // API provides 'name', local user has 'username'.
+                const isCurrentUser = currentLocalUser && user.name === currentLocalUser.username;
 
                 const item = document.createElement('div');
-                // Highlight current user
-                item.className = `leaderboard-item flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md ${isCurrentUser ? 'ring-2 ring-indigo-500' : ''}`;
+                item.className = `leaderboard-item flex items-center justify-between p-3 border border-gray-200 rounded-lg shadow-sm hover:shadow-md ${isCurrentUser ? 'ring-2 ring-indigo-500' : ''}`;
                 item.innerHTML = `
-                    <div class="flex items-center">
+                    <div class="flex items-center overflow-hidden mr-2">
                         <span class="rank-badge rounded-full text-xs mr-3 ${rankBadgeClass}">${rank}</span>
-                        <span class="font-medium text-gray-700 truncate pr-2 ${isCurrentUser ? 'font-bold' : ''}">${user.username}</span>
+                        <span class="font-medium text-gray-700 truncate pr-1 ${isCurrentUser ? 'font-bold' : ''}">${user.name || 'Unnamed User'}</span>
                     </div>
-                    <span class="font-semibold text-indigo-600 whitespace-nowrap ${isCurrentUser ? 'font-bold' : ''}">${(user.liamCoins || 0).toLocaleString()} Liam Coins</span>
+                    <span class="font-semibold text-indigo-600 whitespace-nowrap">${(user.liamCoins || 0).toLocaleString()} Liam Coins</span>
                 `;
                 leaderboardDiv.appendChild(item);
             });
         }
 
-        // Event listener for when the socket successfully connects
-        socket.on('connect', () => {
-            console.log('Connected to Socket.IO server!');
-            showMessage('Connected to server!', 'success');
-            loadLocalUserData();
-            fetchLeaderboard(); // Fetch initial data from your Spring Boot API
-        });
-
-        // Event listener for leaderboard updates from the Socket.IO server
-        socket.on('leaderboard_update', (socketData) => {
-            console.log('Leaderboard update received via Socket.IO:', socketData);
-            loadLocalUserData(); // Ensure local user info is fresh
-            // **IMPORTANT**: You need to decide the format `socketData` will be.
-            // If it's already an array of users like from /api/users, great.
-            // If it's an object {username: score}, updateLeaderboard can handle it.
-            // For consistency, it's best if your Socket.IO server also sends an array of user objects.
-            // Or, if the socket only sends updates for *specific* users, you'll need different logic.
-            // Assuming for now it might send a full list in a compatible format:
-            lastFetchedLeaderboardData = Array.isArray(socketData) ? socketData : Object.entries(socketData).map(([username, liamCoins]) => ({ username, liamCoins }));
-            updateLeaderboard(lastFetchedLeaderboardData);
-        });
-
-        socket.on('connect_error', (error) => {
-            console.error('Connection to Socket.IO server failed:', error);
-            leaderboardDiv.innerHTML = '<p class="text-center text-red-500">Could not connect to the leaderboard server.</p>';
-            showMessage('Error connecting to Socket.IO server.', 'error');
-        });
-
-        // Function to fetch the initial leaderboard state via HTTP from Spring Boot API
+        // Function to fetch the leaderboard state via HTTP from Spring Boot API
         async function fetchLeaderboard() {
-            // Replace with your actual Spring Boot API IP and port
             const apiURL = 'http://10.104.160.95:8080/api/users';
-            console.log(`Workspaceing leaderboard from ${apiURL}`);
-            leaderboardDiv.innerHTML = '<p class="text-center text-gray-500">Loading leaderboard...</p>'; // Show loading state
+            // console.log(`Workspaceing leaderboard from ${apiURL}`);
+            if (leaderboardDiv) {
+                 leaderboardDiv.innerHTML = '<p class="text-center text-gray-500">🔄 Refreshing leaderboard...</p>';
+            }
+            if (refreshButton) {
+                refreshButton.disabled = true;
+            }
 
             try {
                 const response = await fetch(apiURL);
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status} from ${apiURL}`);
+                    const errorText = await response.text();
+                    throw new Error(`HTTP error! Status: ${response.status} - ${response.statusText}. Details: ${errorText}. URL: ${apiURL}`);
                 }
                 const usersArray = await response.json(); // Expecting an array of user objects
-                console.log('Initial leaderboard fetched from API:', usersArray);
-                lastFetchedLeaderboardData = usersArray; // Store for potential refresh from storage event
+                // console.log('Leaderboard fetched from API:', usersArray);
+                lastFetchedLeaderboardData = usersArray;
+                loadLocalUserData(); // Crucial: Ensure local user is loaded/reloaded before updating display
                 updateLeaderboard(usersArray);
+                showMessage('Leaderboard updated!', 'success');
             } catch (error) {
                 console.error('Failed to fetch leaderboard from API:', error);
-                leaderboardDiv.innerHTML = `<p class="text-center text-red-500">Failed to load leaderboard. Error: ${error.message}. Check API connection.</p>`;
+                if (leaderboardDiv) {
+                    leaderboardDiv.innerHTML = `<p class="text-center text-red-500">Failed to load. ${error.message}</p>`;
+                }
                 showMessage('Failed to load leaderboard data.', 'error');
+            } finally {
+                if (refreshButton) {
+                     refreshButton.disabled = false;
+                }
             }
         }
 
         // Listen for localStorage changes from other tabs
         window.addEventListener('storage', (event) => {
             if (event.key === 'user' && event.newValue) {
-                console.log('Leaderboard: Detected "user" change in localStorage.');
+                // console.log('Leaderboard: Detected "user" change in localStorage.');
                 const oldCoins = currentLocalUser ? currentLocalUser.liamCoins : null;
                 loadLocalUserData(); // Reload local user data
 
-                // If local user's coins changed, re-render using the last fetched full list + updated local user
-                if (currentLocalUser && (currentLocalUser.liamCoins !== oldCoins)) {
-                    console.log("Local user's LiamCoins changed, refreshing leaderboard view.");
+                if (currentLocalUser && (oldCoins === null || currentLocalUser.liamCoins !== oldCoins)) {
+                    // console.log("Local user's LiamCoins changed, updating leaderboard view with last fetched data.");
                     updateLeaderboard(lastFetchedLeaderboardData); // Re-render with stored full list
                 }
             }
         });
 
-        // Initial load
-        loadLocalUserData();
-        // fetchLeaderboard(); // Called on socket 'connect' now
+        // Event listener for the refresh button
+        if (refreshButton) {
+            refreshButton.addEventListener('click', fetchLeaderboard);
+        } else {
+            console.warn("Refresh button (id='refreshButton') not found. Manual refresh will not work.");
+        }
+
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadLocalUserData(); // Load local user first to have 'currentLocalUser' ready
+            fetchLeaderboard(); // Then fetch data when the page loads
+
+            // Optional: Auto-refresh every N seconds
+            // const autoRefreshInterval = 30000; // e.g., 30 seconds
+            // setInterval(fetchLeaderboard, autoRefreshInterval);
+        });
     </script>
-</body>
-</html>
 </body>
 </html>
