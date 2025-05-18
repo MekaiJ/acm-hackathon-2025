@@ -196,7 +196,6 @@ const blackjack = {
       locked = true;
     }
     this.updateCoins();
-    
   }
 };
 
