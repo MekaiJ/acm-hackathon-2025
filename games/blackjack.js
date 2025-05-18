@@ -109,7 +109,6 @@ var blackjack = {
             console.log("Bust!");
         }
 
-
         this.houseCheck();
         console.log("Points: " + points);
         console.log("House Points: " + hPoints);
