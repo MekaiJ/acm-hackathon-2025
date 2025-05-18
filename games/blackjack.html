@@ -40,15 +40,16 @@
 </head>
 <body>
     <h1>Blackjack</h1>
-    <div class="hand">
-        <h2>Your Hand</h2>
-        <div id="player-cards" class="cards"></div>
-        <p id="player-points">Points: 0</p>
-    </div>
+    <p id="credits">💰 LiamCoins: 200</p>
     <div class="hand">
         <h2>House Hand</h2>
         <div id="house-cards" class="cards"></div>
         <p id="house-points">House Points: 0</p>
+    </div>
+    <div class="hand">
+        <h2>Your Hand</h2>
+        <div id="player-cards" class="cards"></div>
+        <p id="player-points">Points: 0</p>
     </div>
     <div>
         <button id="hit">Hit Me</button>
@@ -57,7 +58,7 @@
     <a href="../index.html">
         <button style="background-color: lightblue; border-radius: 15px;">Back to Casino</button>
     </a>
-    <button onClick="window.location.reload();" style="background-color: lightblue; border-radius: 15px;">New Game</button>
+    <button id="newGame" style="background-color: lightblue; border-radius: 15px;">New Game</button>
     <h2 id="status"></h2>
     <script src="./blackjack.js"></script>
 </body>

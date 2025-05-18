@@ -1,3 +1,24 @@
+const storedUser = localStorage.getItem("user");
+let user;
+try {
+  user = JSON.parse(storedUser);
+} catch (e) {
+  console.error("Failed to parse user from localStorage:", e);
+  window.location.href = "login.html";
+}
+
+if (!user || !user.id) {
+  window.location.href = "login.html";
+}
+
+let id = parseInt(user.id, 10); 
+let liamCoins = parseInt(user.liamCoins, 10);
+if (isNaN(liamCoins)) {
+  window.location.href = "login.html"; 
+}
+
+let locked = false;
+
 class Card {
   constructor(face, suit) {
     this.face = face;
@@ -106,9 +127,11 @@ const blackjack = {
 
     playerHand.updatePointsDisplay();
     houseHand.updatePointsDisplay();
+    this.updateCoins();
   },
 
   hitMe() {
+    if(locked) return;
     playerHand.add(deck.draw());
     playerHand.updatePointsDisplay();
 
@@ -120,12 +143,12 @@ const blackjack = {
   },
 
   hold() {
+    if(locked) return;
     while (houseHand.getPoints() < 17) {
       houseHand.add(deck.draw());
     }
 
     houseHand.updatePointsDisplay();
-    this.checkWinner();
   },
 
   houseTurn() {
@@ -139,26 +162,54 @@ const blackjack = {
     }
   },
 
+  updateCoins() {
+    document.getElementById("credits").textContent = `💰 LiamCoins: ${liamCoins}`;
+    user.liamCoins = liamCoins.toString();
+    localStorage.setItem("user", JSON.stringify(user));  // <-- stringify here
+    fetch("http://10.104.160.95:8080/api/users/".concat(id), {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(user)
+    })
+    .then(response => response.json())
+    .then(data => console.log('Updated user:', data))
+    .catch(error => console.error('Error:', error));
+  },
+
   checkWinner() {
+    if(locked) return;
     const playerPoints = playerHand.getPoints();
     const housePoints = houseHand.getPoints();
 
     if (playerPoints > 21) {
       document.getElementById("status").textContent = "You busted!";
+      liamCoins -= 20;
+      locked = true;
     } else if (housePoints > 21) {
       document.getElementById("status").textContent = "House busted! You win!";
-    } else if (playerPoints > housePoints) {
-      document.getElementById("status").textContent = "You win!";
-    } else if (playerPoints < housePoints) {
-      document.getElementById("status").textContent = "House wins!";
-    } else {
+      liamCoins += 20;
+      locked = true;
+    } else if(housePoints == 21 && playerPoints == 21) {
       document.getElementById("status").textContent = "It's a tie!";
+      locked = true;
     }
+    this.updateCoins();
+    
   }
 };
 
 window.onload = () => {
+  if(liamCoins <= 0) {
+    document.getElementById("noCoins").textContent = "NO COINS? NO PLAY";
+    locked = true;
+  }else {
+    document.getElementById("noCoins").textContent = "";
+  }
   blackjack.start();
-  document.getElementById("hit").onclick = () => blackjack.hitMe();
-  document.getElementById("hold").onclick = () => blackjack.hold();
+  if(!locked) {
+    document.getElementById("hit").onclick = () => {blackjack.hitMe(); blackjack.checkWinner();}
+    document.getElementById("hold").onclick = () => {blackjack.hold(); blackjack.checkWinner();}
+  }
 };
