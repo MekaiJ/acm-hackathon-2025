@@ -95,169 +95,163 @@
     
 
     <script>
-        // --- Global State & Configuration ---
-        const chipBalanceElement = document.getElementById('player-chip-balance');
-        const MYSTERY_BOX_DURATION_SECONDS = 10 * 60; // 10 minutes for the timer
+        const leaderboardDiv = document.getElementById('leaderboard');
+        const messageBox = document.getElementById('message-box');
+        const refreshButton = document.getElementById('refreshButton');
+        let messageTimeout;
+        let currentLocalUser = null;
+        let lastFetchedLeaderboardData = []; // Store the last successfully fetched array from API
 
-        // --- Load User Data ---
-        const user = JSON.parse(localStorage.getItem("user"));
-        let id;
-        let liamCoins; // This will be our primary currency variable for the shop
-
-        if (!user || user.id === undefined || user.liamCoins === undefined) {
-            // If user data is missing or incomplete, redirect to login
-            // You might want to handle this more gracefully, e.g., show a message
-            console.error("User data not found or incomplete in localStorage. Redirecting to login.");
-            window.location.href = "games/login.html";
-        } else {
-            id = parseInt(user.id, 10);
-            liamCoins = parseInt(user.liamCoins, 10);
-
-            if (isNaN(id) || isNaN(liamCoins)) {
-                console.error("User ID or LiamCoins is not a valid number after parsing. Redirecting to login.");
-                window.location.href = "games/login.html";
+        // Function to show a message (success or error)
+        function showMessage(message, type = 'success') {
+            messageBox.textContent = message;
+            messageBox.className = '';
+            messageBox.classList.add(type);
+            messageBox.classList.add('show');
+            if (messageTimeout) {
+                clearTimeout(messageTimeout);
             }
+            messageTimeout = setTimeout(() => {
+                messageBox.classList.remove('show');
+            }, 3000);
         }
 
-        // --- Utility Functions ---
-        function formatChipCount(coins) {
-            return coins.toLocaleString(); // Adds commas for thousands
-        }
-
-        function updateLiamCoinDisplayAndStorage() {
-            if (chipBalanceElement) {
-                chipBalanceElement.textContent = formatChipCount(liamCoins);
-            }
-            // Update the user object in memory
-            if (user) { // Ensure user object exists
-                user.liamCoins = liamCoins.toString();
-                // Save updated user object back to localStorage
-                localStorage.setItem("user", JSON.stringify(user)); // Stringify before saving
-            }
-
-
-            // Persist to backend API
-            if (user && id !== undefined) { // Ensure we have a user and ID
-                fetch(`http://10.104.160.95:8080/api/users/${id}`, { // Use template literal for clarity
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(user) // Send the whole user object
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        // If response is not OK, throw an error to be caught by .catch
-                        return response.text().then(text => { throw new Error(`Network response was not ok: ${response.status} ${response.statusText} - ${text}`) });
+        // Function to load local user data from localStorage
+        function loadLocalUserData() {
+            const userString = localStorage.getItem("user");
+            currentLocalUser = null; // Reset before loading
+            if (userString) {
+                try {
+                    const parsedUser = JSON.parse(userString);
+                    if (parsedUser && typeof parsedUser.username === 'string' && parsedUser.liamCoins !== undefined) {
+                        const coins = parseInt(parsedUser.liamCoins, 10);
+                        if (!isNaN(coins)) {
+                            currentLocalUser = {
+                                username: parsedUser.username,
+                                liamCoins: coins
+                                // id: parsedUser.id ? parseInt(parsedUser.id, 10) : undefined
+                            };
+                            console.log("Local user data loaded for leaderboard:", currentLocalUser);
+                        } else {
+                            console.warn("Parsed liamCoins is NaN for local user.");
+                        }
+                    } else {
+                         console.warn("Local user data missing username or liamCoins.");
                     }
-                    return response.json();
-                })
-                .then(data => console.log('Shop: Updated user on backend:', data))
-                .catch(error => console.error('Shop: Error updating user on backend:', error));
+                } catch (e) {
+                    console.error("Error parsing local user data for leaderboard:", e);
+                }
             }
         }
 
+        /**
+         * Updates the leaderboard display.
+         * @param {Array<Object>} usersArrayFromServer - An array of user objects from the API.
+         */
+        function updateLeaderboard(usersArrayFromServer) {
+            leaderboardDiv.innerHTML = ''; // Clear previous entries
 
-        function showNotification(message, type = 'info') {
-            console.log(`[${type.toUpperCase()}] ${message}`);
-            alert(message); // Simple alert for now
-        }
+            let displayArray = usersArrayFromServer.map(u => ({ ...u })); // Create a mutable shallow copy
 
-        // --- Initialization ---
-        function initializeShop() {
-            if (isNaN(liamCoins)) { // Double check after potential redirection
-                // This case should ideally be caught by the initial check,
-                // but as a safeguard if initializeShop is called unexpectedly.
-                console.error("LiamCoins is NaN during shop initialization. This shouldn't happen.");
-                return; // Prevent further execution if liamCoins is not valid
+            // If currentLocalUser exists, update their entry in the displayArray or add them
+            if (currentLocalUser) {
+                const localUserIndex = displayArray.findIndex(u => u.username === currentLocalUser.username);
+                if (localUserIndex > -1) {
+                    displayArray[localUserIndex].liamCoins = currentLocalUser.liamCoins;
+                } else {
+                    // Add local user if not in the fetched list
+                    // This might happen if API data is slightly stale or user is brand new
+                    displayArray.push({ ...currentLocalUser });
+                }
             }
-            updateLiamCoinDisplayAndStorage(); // Initial display and ensure localStorage is current
-            startMysteryBoxTimer(MYSTERY_BOX_DURATION_SECONDS);
-            setupEventListeners();
-        }
 
-        // --- Event Listeners ---
-        function setupEventListeners() {
-            document.querySelectorAll('.buy-btn').forEach(button => {
-                button.addEventListener('click', handlePurchaseAttempt);
+            if (displayArray.length === 0) {
+                leaderboardDiv.innerHTML = '<p class="text-center text-gray-500">The leaderboard is empty or no data received.</p>';
+                return;
+            }
+
+            // Sort the leaderboard by liamCoins in descending order
+            const sortedLeaderboard = displayArray.sort((a, b) => (b.liamCoins || 0) - (a.liamCoins || 0) );
+
+            sortedLeaderboard.forEach((user, index) => {
+                const rank = index + 1;
+                let rankBadgeClass = 'rank-other';
+                if (rank === 1) rankBadgeClass = 'rank-1';
+                else if (rank === 2) rankBadgeClass = 'rank-2';
+                else if (rank === 3) rankBadgeClass = 'rank-3';
+
+                const isCurrentUser = currentLocalUser && user.username === currentLocalUser.username;
+
+                const item = document.createElement('div');
+                item.className = `leaderboard-item flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md ${isCurrentUser ? 'ring-2 ring-indigo-500' : ''}`;
+                item.innerHTML = `
+                    <div class="flex items-center">
+                        <span class="rank-badge rounded-full text-xs mr-3 ${rankBadgeClass}">${rank}</span>
+                        <span class="font-medium text-gray-700 truncate pr-2 ${isCurrentUser ? 'font-bold' : ''}">${user.username}</span>
+                    </div>
+                    <span class="font-semibold text-indigo-600 whitespace-nowrap ${isCurrentUser ? 'font-bold' : ''}">${(user.liamCoins || 0).toLocaleString()} Liam Coins</span>
+                `;
+                leaderboardDiv.appendChild(item);
             });
         }
 
-        // --- Purchase Logic ---
-        function handlePurchaseAttempt(event) {
-            const button = event.currentTarget;
-            const itemId = button.dataset.itemId;
-            const itemName = button.dataset.itemName;
-            const price = parseFloat(button.dataset.price);
-            const currency = button.dataset.currency;
-            const itemType = button.dataset.itemType;
-            const chipAmount = parseInt(button.dataset.chipAmount, 10) || 0;
+        // Function to fetch the leaderboard state via HTTP from Spring Boot API
+        async function fetchLeaderboard() {
+            // Replace with your actual Spring Boot API IP and port if different from the shop/game
+            const apiURL = 'http://10.104.160.95:8080/api/users'; // Assuming this is your Spring Boot API
+            console.log(`Workspaceing leaderboard from ${apiURL}`);
+            leaderboardDiv.innerHTML = '<p class="text-center text-gray-500">🔄 Refreshing leaderboard...</p>';
+            refreshButton.disabled = true; // Disable button during fetch
 
-            console.log(`Attempting purchase: ${itemName} (ID: ${itemId}) for ${price} ${currency}`);
-
-            if (currency === 'chips') { // Assuming 'chips' means LiamCoins
-                if (liamCoins >= price) {
-                    liamCoins -= price;
-                    if (itemType === 'chips') { // If the item itself is a bundle of LiamCoins
-                        liamCoins += chipAmount;
-                    }
-
-                    updateLiamCoinDisplayAndStorage(); // This will update display, localStorage, and backend
-                    showNotification(`Successfully purchased ${itemName}!`, 'success');
-                    // TODO: Add item to player's inventory (client-side representation or backend call if it's not just currency)
-                    console.log(`SHOP: Purchase successful. User ${id} bought ${itemName}. Current LiamCoins: ${liamCoins}`);
-
-                } else {
-                    showNotification('Not enough LiamCoins for this item!', 'error');
+            try {
+                const response = await fetch(apiURL);
+                if (!response.ok) {
+                    const errorText = await response.text(); // Get more details on error
+                    throw new Error(`HTTP error! Status: ${response.status} - ${response.statusText}. Details: ${errorText}. URL: ${apiURL}`);
                 }
-            } else if (currency === 'usd') {
-                showNotification(`Initiating purchase for ${itemName} for $${price}. \nRedirecting to payment provider... (simulation)`, 'info');
-                console.log(`BACKEND CALL SIMULATION: createPaymentIntent(user, ${itemId}, ${price} USD)`);
-            } else {
-                showNotification('Unknown currency type.', 'error');
+                const usersArray = await response.json();
+                console.log('Leaderboard fetched from API:', usersArray);
+                lastFetchedLeaderboardData = usersArray; // Store for potential refresh from storage event
+                loadLocalUserData(); // Ensure local user is loaded before updating display
+                updateLeaderboard(usersArray);
+                showMessage('Leaderboard updated!', 'success');
+            } catch (error) {
+                console.error('Failed to fetch leaderboard from API:', error);
+                leaderboardDiv.innerHTML = `<p class="text-center text-red-500">Failed to load leaderboard. ${error.message}</p>`;
+                showMessage('Failed to load leaderboard data.', 'error');
+            } finally {
+                refreshButton.disabled = false; // Re-enable button
             }
         }
 
-        // --- Mystery Box Timer ---
-        let mysteryBoxInterval;
-        function startMysteryBoxTimer(durationSeconds) {
-            const timerElement = document.getElementById('mystery-box-timer');
-            if (!timerElement) return;
+        // Listen for localStorage changes from other tabs
+        window.addEventListener('storage', (event) => {
+            if (event.key === 'user' && event.newValue) {
+                console.log('Leaderboard: Detected "user" change in localStorage.');
+                const oldCoins = currentLocalUser ? currentLocalUser.liamCoins : null;
+                loadLocalUserData(); // Reload local user data
 
-            let timeLeft = durationSeconds;
-
-            if (mysteryBoxInterval) {
-                clearInterval(mysteryBoxInterval);
-            }
-
-            mysteryBoxInterval = setInterval(() => {
-                if (timeLeft <= 0) {
-                    clearInterval(mysteryBoxInterval);
-                    timerElement.textContent = "(Expired!)";
-                    const mysteryBoxButton = document.querySelector('button[data-item-id="mystery_box"]');
-                    if (mysteryBoxButton) {
-                        mysteryBoxButton.disabled = true;
-                        mysteryBoxButton.textContent = "Deal Expired";
-                    }
-                } else {
-                    const minutes = Math.floor(timeLeft / 60);
-                    const seconds = timeLeft % 60;
-                    timerElement.textContent = `(${minutes}:${seconds < 10 ? '0' : ''}${seconds})`;
-                    timeLeft--;
+                if (currentLocalUser && (currentLocalUser.liamCoins !== oldCoins)) {
+                    console.log("Local user's LiamCoins changed, updating leaderboard view with last fetched data.");
+                    // Re-render using the last fully fetched data, but with the updated local user score merged in.
+                    updateLeaderboard(lastFetchedLeaderboardData);
                 }
-            }, 1000);
-        }
-
-        // --- Document Ready ---
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializeShop);
-        } else {
-            // DOMContentLoaded has already fired only if user was not redirected
-            if (user && !isNaN(liamCoins)) { // Check if user data is valid before initializing
-                 initializeShop();
             }
-        }
+        });
 
+        // Event listener for the refresh button
+        refreshButton.addEventListener('click', fetchLeaderboard);
+
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadLocalUserData();
+            fetchLeaderboard(); // Fetch data when the page loads
+
+            // Optional: Auto-refresh every N seconds
+            // const autoRefreshInterval = 60000; // e.g., 60 seconds
+            // setInterval(fetchLeaderboard, autoRefreshInterval);
+            // console.log(`Leaderboard will auto-refresh every ${autoRefreshInterval / 1000} seconds.`);
+        });
     </script>
 </body>
 </html>

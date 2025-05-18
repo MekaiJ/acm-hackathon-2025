@@ -92,62 +92,116 @@
     <div id="message-box"></div>
 
     <script>
-        // Attempt to connect to the Socket.IO server.
-        // Replace 'http://localhost:5000' with your server's actual address if different.
-        const socket = io('http://localhost:5000');
+        const socket = io('http://10.104.160.95:8080'); // Your Socket.IO server
         const leaderboardDiv = document.getElementById('leaderboard');
         const messageBox = document.getElementById('message-box');
         let messageTimeout;
+        let currentLocalUser = null; // To store the logged-in user's data from localStorage
+        let lastFetchedLeaderboardData = []; // Store the last successfully fetched array
 
         // Function to show a message (success or error)
         function showMessage(message, type = 'success') {
             messageBox.textContent = message;
-            // Reset classes, then add the type and 'show'
-            messageBox.className = ''; // Clear existing type classes (success/error)
-            messageBox.classList.add(type); // 'success' or 'error'
+            messageBox.className = '';
+            messageBox.classList.add(type);
             messageBox.classList.add('show');
-
-
-            // Clear previous timeout if any
             if (messageTimeout) {
                 clearTimeout(messageTimeout);
             }
-
-            // Hide message after 3 seconds
             messageTimeout = setTimeout(() => {
                 messageBox.classList.remove('show');
             }, 3000);
         }
 
+        // Function to load local user data from localStorage
+        function loadLocalUserData() {
+            const userString = localStorage.getItem("user");
+            if (userString) {
+                try {
+                    const parsedUser = JSON.parse(userString);
+                    // Ensure username and liamCoins are present and valid
+                    if (parsedUser && typeof parsedUser.username === 'string' && parsedUser.liamCoins !== undefined) {
+                        const coins = parseInt(parsedUser.liamCoins, 10);
+                        if (!isNaN(coins)) {
+                            currentLocalUser = {
+                                username: parsedUser.username,
+                                liamCoins: coins
+                                // Include id if you need it for precise matching later
+                                // id: parsedUser.id ? parseInt(parsedUser.id, 10) : undefined
+                            };
+                            console.log("Local user data loaded for leaderboard:", currentLocalUser);
+                        } else {
+                             currentLocalUser = null; // Parsed liamCoins is NaN
+                        }
+                    } else {
+                        currentLocalUser = null; // Missing username or liamCoins
+                    }
+                } catch (e) {
+                    console.error("Error parsing local user data for leaderboard:", e);
+                    currentLocalUser = null;
+                }
+            } else {
+                currentLocalUser = null; // No user in localStorage
+            }
+        }
 
-        // Function to update the leaderboard display
+        /**
+         * Updates the leaderboard display.
+         * @param {Array<Object>} usersArray - An array of user objects, e.g., [{username: 'name', liamCoins: 100}, ...]
+         * OR an object {username1: score1, username2: score2} for socket updates.
+         */
         function updateLeaderboard(data) {
             leaderboardDiv.innerHTML = ''; // Clear previous entries
 
-            if (Object.keys(data).length === 0) {
+            let processedUsersArray = [];
+
+            if (Array.isArray(data)) {
+                // Data is an array of user objects (likely from HTTP fetch)
+                processedUsersArray = data.map(u => ({ ...u })); // Create a shallow copy to make it mutable
+            } else if (typeof data === 'object' && data !== null) {
+                // Data is an object {username: score} (likely from old socket event or processed form)
+                processedUsersArray = Object.entries(data).map(([username, liamCoins]) => ({ username, liamCoins }));
+            }
+
+
+            // If currentLocalUser exists, update their entry in the processedUsersArray or add them
+            if (currentLocalUser) {
+                const localUserIndex = processedUsersArray.findIndex(u => u.username === currentLocalUser.username);
+                if (localUserIndex > -1) {
+                    // Update existing user's liamCoins if local is higher or simply to reflect local truth
+                    processedUsersArray[localUserIndex].liamCoins = currentLocalUser.liamCoins;
+                } else {
+                    // Add local user if not in the list (e.g., new user not yet in a full fetch)
+                    processedUsersArray.push({ ...currentLocalUser });
+                }
+            }
+
+            if (processedUsersArray.length === 0) {
                 leaderboardDiv.innerHTML = '<p class="text-center text-gray-500">The leaderboard is empty.</p>';
                 return;
             }
 
-            // Sort the leaderboard by score in descending order
-            const sortedLeaderboard = Object.entries(data)
-                .sort(([, a], [, b]) => b - a);
+            // Sort the leaderboard by liamCoins in descending order
+            const sortedLeaderboard = processedUsersArray.sort((a, b) => b.liamCoins - a.liamCoins);
 
-            sortedLeaderboard.forEach(([username, score], index) => {
+            sortedLeaderboard.forEach((user, index) => {
                 const rank = index + 1;
                 let rankBadgeClass = 'rank-other';
                 if (rank === 1) rankBadgeClass = 'rank-1';
                 else if (rank === 2) rankBadgeClass = 'rank-2';
                 else if (rank === 3) rankBadgeClass = 'rank-3';
 
+                const isCurrentUser = currentLocalUser && user.username === currentLocalUser.username;
+
                 const item = document.createElement('div');
-                item.className = 'leaderboard-item flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md';
+                // Highlight current user
+                item.className = `leaderboard-item flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md ${isCurrentUser ? 'ring-2 ring-indigo-500' : ''}`;
                 item.innerHTML = `
                     <div class="flex items-center">
                         <span class="rank-badge rounded-full text-xs mr-3 ${rankBadgeClass}">${rank}</span>
-                        <span class="font-medium text-gray-700 truncate pr-2">${username}</span> {/* Added truncate and pr-2 */}
+                        <span class="font-medium text-gray-700 truncate pr-2 ${isCurrentUser ? 'font-bold' : ''}">${user.username}</span>
                     </div>
-                    <span class="font-semibold text-indigo-600 whitespace-nowrap">${score.toLocaleString()} Liam Coins</span> {/* Added toLocaleString and whitespace-nowrap */}
+                    <span class="font-semibold text-indigo-600 whitespace-nowrap ${isCurrentUser ? 'font-bold' : ''}">${(user.liamCoins || 0).toLocaleString()} Liam Coins</span>
                 `;
                 leaderboardDiv.appendChild(item);
             });
@@ -157,44 +211,73 @@
         socket.on('connect', () => {
             console.log('Connected to Socket.IO server!');
             showMessage('Connected to server!', 'success');
-            // Request initial leaderboard data upon connection
-            fetchLeaderboard();
+            loadLocalUserData();
+            fetchLeaderboard(); // Fetch initial data from your Spring Boot API
         });
 
-        // Event listener for leaderboard updates from the server
-        socket.on('leaderboard_update', (data) => {
-            console.log('Leaderboard update received:', data);
-            updateLeaderboard(data);
+        // Event listener for leaderboard updates from the Socket.IO server
+        socket.on('leaderboard_update', (socketData) => {
+            console.log('Leaderboard update received via Socket.IO:', socketData);
+            loadLocalUserData(); // Ensure local user info is fresh
+            // **IMPORTANT**: You need to decide the format `socketData` will be.
+            // If it's already an array of users like from /api/users, great.
+            // If it's an object {username: score}, updateLeaderboard can handle it.
+            // For consistency, it's best if your Socket.IO server also sends an array of user objects.
+            // Or, if the socket only sends updates for *specific* users, you'll need different logic.
+            // Assuming for now it might send a full list in a compatible format:
+            lastFetchedLeaderboardData = Array.isArray(socketData) ? socketData : Object.entries(socketData).map(([username, liamCoins]) => ({ username, liamCoins }));
+            updateLeaderboard(lastFetchedLeaderboardData);
         });
 
-        // Event listener for connection errors
         socket.on('connect_error', (error) => {
             console.error('Connection to Socket.IO server failed:', error);
-            leaderboardDiv.innerHTML = '<p class="text-center text-red-500">Could not connect to the leaderboard server. Please ensure the server is running and accessible.</p>';
-            showMessage('Error connecting to server.', 'error');
+            leaderboardDiv.innerHTML = '<p class="text-center text-red-500">Could not connect to the leaderboard server.</p>';
+            showMessage('Error connecting to Socket.IO server.', 'error');
         });
 
-        // Function to fetch the initial leaderboard state via HTTP
+        // Function to fetch the initial leaderboard state via HTTP from Spring Boot API
         async function fetchLeaderboard() {
+            // Replace with your actual Spring Boot API IP and port
+            const apiURL = 'http://10.104.160.95:8080/api/users';
+            console.log(`Workspaceing leaderboard from ${apiURL}`);
+            leaderboardDiv.innerHTML = '<p class="text-center text-gray-500">Loading leaderboard...</p>'; // Show loading state
+
             try {
-                // Fetch from the /leaderboard endpoint on your server
-                const response = await fetch('http://0.0.0.0:5000/leaderboard');
+                const response = await fetch(apiURL);
                 if (!response.ok) {
-                    // If the response is not ok, throw an error with the status
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    throw new Error(`HTTP error! status: ${response.status} from ${apiURL}`);
                 }
-                // Parse the JSON response
-                const data = await response.json();
-                console.log('Initial leaderboard fetched:', data);
-                // Update the leaderboard display with the fetched data
-                updateLeaderboard(data);
+                const usersArray = await response.json(); // Expecting an array of user objects
+                console.log('Initial leaderboard fetched from API:', usersArray);
+                lastFetchedLeaderboardData = usersArray; // Store for potential refresh from storage event
+                updateLeaderboard(usersArray);
             } catch (error) {
-                // Log any errors during fetching and display an error message
-                console.error('Failed to fetch leaderboard:', error);
-                leaderboardDiv.innerHTML = '<p class="text-center text-red-500">Failed to load leaderboard. Check server connection.</p>';
-                showMessage('Failed to load leaderboard.', 'error');
+                console.error('Failed to fetch leaderboard from API:', error);
+                leaderboardDiv.innerHTML = `<p class="text-center text-red-500">Failed to load leaderboard. Error: ${error.message}. Check API connection.</p>`;
+                showMessage('Failed to load leaderboard data.', 'error');
             }
         }
+
+        // Listen for localStorage changes from other tabs
+        window.addEventListener('storage', (event) => {
+            if (event.key === 'user' && event.newValue) {
+                console.log('Leaderboard: Detected "user" change in localStorage.');
+                const oldCoins = currentLocalUser ? currentLocalUser.liamCoins : null;
+                loadLocalUserData(); // Reload local user data
+
+                // If local user's coins changed, re-render using the last fetched full list + updated local user
+                if (currentLocalUser && (currentLocalUser.liamCoins !== oldCoins)) {
+                    console.log("Local user's LiamCoins changed, refreshing leaderboard view.");
+                    updateLeaderboard(lastFetchedLeaderboardData); // Re-render with stored full list
+                }
+            }
+        });
+
+        // Initial load
+        loadLocalUserData();
+        // fetchLeaderboard(); // Called on socket 'connect' now
     </script>
+</body>
+</html>
 </body>
 </html>
