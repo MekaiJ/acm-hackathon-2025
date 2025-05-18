@@ -137,6 +137,7 @@ const blackjack = {
 
     if (playerHand.getPoints() > 21) {
       document.getElementById("status").textContent = "You busted!";
+      blackjack.checkWinner();
     } else {
       this.houseTurn();
     }
@@ -144,22 +145,23 @@ const blackjack = {
 
   hold() {
     if(locked) return;
-    while (houseHand.getPoints() < 17) {
-      houseHand.add(deck.draw());
-    }
-
+    houseHand.add(deck.draw());
     houseHand.updatePointsDisplay();
   },
 
   houseTurn() {
-    if (houseHand.getPoints() < 17) {
-      houseHand.add(deck.draw());
-      houseHand.updatePointsDisplay();
-
-      if (houseHand.getPoints() > 21) {
-        document.getElementById("status").textContent = "House busted! You win!";
-      }
+    if(housePoints > 17) {
+      blackjack.checkWinner();
+      return;
     }
+    houseHand.add(deck.draw());
+    houseHand.updatePointsDisplay();
+
+    if (houseHand.getPoints() > 21) {
+      document.getElementById("status").textContent = "House busted! You win!";
+      blackjack.checkWinner();
+    }
+  
   },
 
   updateCoins() {
@@ -194,6 +196,14 @@ const blackjack = {
     } else if(housePoints == 21 && playerPoints == 21) {
       document.getElementById("status").textContent = "It's a tie!";
       locked = true;
+    } else if(playerPoints > housePoints) {
+      document.getElementById("status").textContent = "You WIN! You were closer to 21!";
+      liamCoins += 20;
+      locked = true;
+    } else if(housePoints > playerPoints) {
+      document.getElementById("status").textContent = "You Lost! House was closer to 21!";
+      liamCoins -= 20;
+      locked = true;
     }
     this.updateCoins();
   }
@@ -208,7 +218,7 @@ window.onload = () => {
   }
   blackjack.start();
   if(!locked) {
-    document.getElementById("hit").onclick = () => {blackjack.hitMe(); blackjack.checkWinner();}
+    document.getElementById("hit").onclick = () => {blackjack.hitMe();}
     document.getElementById("hold").onclick = () => {blackjack.hold(); blackjack.checkWinner();}
   }
 };
