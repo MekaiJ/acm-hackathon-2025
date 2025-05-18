@@ -12,7 +12,7 @@
     <div class="fomo-section">
         <p class="fomo-text">
             <span class="flashing-icon">🔥</span>
-            <strong>Last Jackpot Won: <span id="last-jackpot-amount">$15,789!</span></strong> - Next one could be YOU!
+            <strong>Last Jackpot Won: <span id="last-jackpot-amount">15,789 Liam Coins!</span></strong> - Next one could be YOU!
             <span class="timer-text">Special bonus ends in: <span id="countdown-timer">10:00</span></span>
         </p>
     </div>
@@ -82,7 +82,7 @@
     function updateJackpot() {
         if(jackpotElement) {
             const randomAmount = Math.floor(Math.random() * (20000 - 5000 + 1)) + 5000;
-            jackpotElement.textContent = '$' + randomAmount.toLocaleString() + '!';
+            jackpotElement.textContent = randomAmount.toLocaleString() + ' Liam Coins!';
         }
     }
 
