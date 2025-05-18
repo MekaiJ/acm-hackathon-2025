@@ -1,5 +1,5 @@
 const user = JSON.parse(localStorage.getItem("user")); // Parse the stored JSON string
-
+let id = parseInt(user.id, 10); 
 let liamCoins = parseInt(user.liamCoins, 10);
 if (isNaN(liamCoins)) {
   window.location.href = "login.html"; 
@@ -15,6 +15,16 @@ function updateCredits() {
   document.getElementById("credits").textContent = `💰 LiamCoins: ${liamCoins}`;
   user.liamCoins = liamCoins.toString();
   localStorage.setItem("user", user);
+  fetch("http://10.104.160.95:8080/api/users/".concat(id), {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(user)
+  })
+  .then(response => response.json())
+  .then(data => console.log('Updated user:', data))
+  .catch(error => console.error('Error:', error));
 }
 
 function checkResult(r1, r2, r3) {
