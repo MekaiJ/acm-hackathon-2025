@@ -119,6 +119,65 @@
             }
         }
 
+        /* --- Advertisement Styling --- */
+        .advertisement-banner {
+            width: 100%;
+            max-width: 728px; /* Common leaderboard ad width */
+            margin: 3rem auto 2rem auto; /* Center it and give some vertical space */
+            padding: 1rem;
+            background-color: rgba(20, 20, 20, 0.85); /* Dark semi-transparent background */
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid #FFD700; /* Gold border, casino theme */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+
+        .ad-image-placeholder {
+            width: 100%; /* Make placeholder responsive */
+            height: 90px; /* Standard leaderboard height */
+            background-color: #444; /* Darker placeholder background */
+            color: #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1em;
+            font-weight: bold;
+            border-radius: 4px;
+            margin-bottom: 0.75rem;
+            border: 1px dashed #FFD700;
+        }
+
+        /* If you use an actual image, you might style it like this:
+        .ad-image-placeholder img {
+            max-width: 100%;
+            max-height: 90px;
+            border-radius: 4px;
+        }
+        */
+
+        .ad-text {
+            color: #f0f0f0; /* Light text for dark ad background */
+            font-size: 1em;
+            margin: 0;
+        }
+
+        .ad-text .ad-highlight {
+            color: #FFEB3B; /* Bright yellow for highlighted text */
+            font-weight: bold;
+        }
+
+        .ad-link { /* If you add a clickable link in the ad text */
+            color: #FFD700;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .ad-link:hover {
+            text-decoration: underline;
+            color: #FFF;
+        }
+        /* --- End Advertisement Styling --- */
+
     </style>
 </head>
 <body>
@@ -141,6 +200,14 @@
             <p>Crank the lever and win the jackpot!</p>
             <a href="games/slots.html" class="play-button button-slots">Play</a>
         </div>
-        </div>
-</body>
+    </div> <div class="advertisement-banner">
+        <div class="ad-image-placeholder">
+            <span>YOUR AMAZING AD BANNER HERE (728x90)</span>
+            </div>
+        <p class="ad-text">
+            ✨ Don't Miss Out! ✨ Get <span class="ad-highlight">DOUBLE THE EGGS</span> on your first deposit today! 
+            Limited time offer! <a href="#" class="ad-link">Claim Now!</a>
+        </p>
+    </div>
+    </body>
 </html>
