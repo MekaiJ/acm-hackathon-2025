@@ -1,5 +1,11 @@
+const user = JSON.parse(localStorage.getItem("user")); // Parse the stored JSON string
+
+let liamCoins = parseInt(user.liamCoins, 10);
+if (isNaN(liamCoins)) {
+  window.location.href = "login.html"; 
+}
+
 const symbols = ["🍒", "🍋", "🍉", "🍇", "🔔", "⭐", "💎"];
-let liamCoins = 200; // Starting balance
 
 function getRandomSymbol() {
   return symbols[Math.floor(Math.random() * symbols.length)];
@@ -7,6 +13,8 @@ function getRandomSymbol() {
 
 function updateCredits() {
   document.getElementById("credits").textContent = `💰 LiamCoins: ${liamCoins}`;
+  user.liamCoins = liamCoins.toString();
+  localStorage.setItem("user", user);
 }
 
 function checkResult(r1, r2, r3) {
